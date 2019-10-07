@@ -35,8 +35,6 @@ func (c *cyprusPost) Parse(track string) (events []Event, err error) {
 			case 0:
 				// "3/14/2019 3:51:00 PM"
 				event.When, err = time.Parse("1/02/2006 3:04:05 PM", selection.Text())
-				fmt.Println(err)
-				fmt.Println(selection.Text())
 			default:
 				event.Description = append(event.Description, selection.Text())
 			}
