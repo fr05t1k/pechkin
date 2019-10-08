@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"github.com/fr05t1k/pechkin/storage"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -13,7 +14,7 @@ func Test_cyprusPost_Parse(t *testing.T) {
 		name       string
 		response   string
 		track      string
-		wantEvents []Event
+		wantEvents []storage.Event
 		wantErr    bool
 	}{
 		{
@@ -54,7 +55,7 @@ func Test_cyprusPost_Parse(t *testing.T) {
 </html>
 `,
 			track: "",
-			wantEvents: []Event{
+			wantEvents: []storage.Event{
 				{
 					When: time.Date(2019, 3, 4, 15, 51, 00, 0, time.UTC),
 					Description: []string{

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/fr05t1k/pechkin/storage"
 	tb "gopkg.in/tucnak/telebot.v2"
 	"log"
 	"os"
@@ -22,8 +23,9 @@ func main() {
 		return
 	}
 
-	b.Handle("/add", MakeAddHandler(b))
-	b.Handle("/list", MakeListHandler(b))
-	b.Handle("/history", MakeHistoryHandler(b))
+	store := storage.NewMemory()
+	b.Handle("/add", MakeAddHandler(b, store))
+	b.Handle("/list", MakeListHandler(b, store))
+	b.Handle("/history", MakeHistoryHandler(b, store))
 	b.Start()
 }

@@ -1,6 +1,9 @@
 package parser
 
-import "time"
+import (
+	"github.com/fr05t1k/pechkin/storage"
+	"time"
+)
 
 type Event struct {
 	When        time.Time
@@ -8,5 +11,5 @@ type Event struct {
 }
 
 type Parser interface {
-	Parse(track string) ([]Event, error)
+	Parse(track string) ([]storage.Event, error)
 }
