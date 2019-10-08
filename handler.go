@@ -19,7 +19,7 @@ func MakeAddHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 		}
 
 		_, _ = b.Send(m.Sender, fmt.Sprintf("%s Added", m.Payload))
-		RunUpdate(b, m.Payload, m.Sender, store)
+		RunUpdate(b, m.Payload, *m.Sender, store)
 	}
 }
 func MakeListHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
@@ -48,7 +48,7 @@ func MakeHistoryHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 
 }
 
-func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) {
+func RunUpdate(b *tb.Bot, track string, sender tb.User, store storage.Storage) {
 	p := parser.NewCyprusPost()
 	go func() {
 		for {
@@ -64,7 +64,7 @@ func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) 
 				log.Println(err)
 			} else {
 				if len(events) != len(existedEvents) {
-					_, _ = b.Send(sender, ToMessage(track, events))
+					_, _ = b.Send(&sender, ToMessage(track, events))
 				}
 			}
 
