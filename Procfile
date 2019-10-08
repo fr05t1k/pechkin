@@ -1,1 +1,1 @@
-worker: pechkin
+worker: ./bin/pechkin
