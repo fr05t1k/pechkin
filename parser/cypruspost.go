@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/fr05t1k/pechkin/storage"
 	"net/http"
 	"time"
 )
@@ -14,7 +15,7 @@ type cyprusPost struct {
 	Client  *http.Client
 }
 
-func (c *cyprusPost) Parse(track string) (events []Event, err error) {
+func (c *cyprusPost) Parse(track string) (events []storage.Event, err error) {
 	response, err := c.Client.Get(fmt.Sprintf(c.PageUrl, track))
 	if err != nil {
 		return
@@ -25,7 +26,7 @@ func (c *cyprusPost) Parse(track string) (events []Event, err error) {
 	}
 
 	doc.Find("table.table-striped.table-bordered tr").Each(func(i int, tr *goquery.Selection) {
-		event := Event{}
+		event := storage.Event{}
 		tds := tr.Find("td")
 		if tds.Size() < 6 || (!tr.HasClass("tabl1") && !tr.HasClass("tabl1")) {
 			return
