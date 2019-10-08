@@ -40,7 +40,7 @@ func Test_cyprusPost_Parse(t *testing.T) {
     
 
     <tr class="tabl1">
-      <td align="center" width="13%">3/14/2019 3:51:00 PM</td>
+      <td align="center" width="13%">3/4/2019 3:51:00 PM</td>
       <td align="center" width="13%">Germany</td>
       <td align="center" width="13%">DE-63179</td>
       <td align="center" width="22%">Receive item from sender/ Κατάθεση αντικειμένου από τον αποστολέα</td>
@@ -56,7 +56,7 @@ func Test_cyprusPost_Parse(t *testing.T) {
 			track: "",
 			wantEvents: []Event{
 				{
-					When: time.Date(2019, 3, 14, 15, 51, 00, 0, time.UTC),
+					When: time.Date(2019, 3, 4, 15, 51, 00, 0, time.UTC),
 					Description: []string{
 						"Germany",
 						"DE-63179",
