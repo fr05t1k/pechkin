@@ -7,6 +7,16 @@ type memory struct {
 	history map[string][]Event
 }
 
+func (m *memory) GetAllTracks() []Track {
+	var tracks []Track
+
+	for _, track := range m.tracks {
+		tracks = append(tracks, track...)
+	}
+
+	return tracks
+}
+
 var NoEventsError = errors.New("no events")
 
 func (m *memory) GetTracks(userId int) (tracks []Track) {
@@ -14,12 +24,13 @@ func (m *memory) GetTracks(userId int) (tracks []Track) {
 	return
 }
 
-func (m *memory) GetEvents(userId int, trackId string) ([]Event, error) {
-	events, ok := m.history[trackId]
-	if !ok {
-		return nil, NoEventsError
-	}
-	return events, nil
+func (m *memory) GetEvents(trackId string) ([]Event, error) {
+	panic("implement me")
+	//events, ok := m.history[trackId]
+	//if !ok {
+	//	return nil, NoEventsError
+	//}
+	//return events, nil
 }
 
 func (m *memory) SetHistory(trackId string, events []Event) error {
@@ -28,7 +39,7 @@ func (m *memory) SetHistory(trackId string, events []Event) error {
 }
 
 func (m *memory) AddTrack(userId int, trackId string) error {
-	m.tracks[userId] = append(m.tracks[userId], Track{Id: trackId})
+	m.tracks[userId] = append(m.tracks[userId], Track{Number: trackId})
 	return nil
 }
 

@@ -57,14 +57,8 @@ func Test_cyprusPost_Parse(t *testing.T) {
 			track: "",
 			wantEvents: []storage.Event{
 				{
-					When: time.Date(2019, 3, 4, 15, 51, 00, 0, time.UTC),
-					Description: []string{
-						"Germany",
-						"DE-63179",
-						"Receive item from sender/ Κατάθεση αντικειμένου από τον αποστολέα",
-						" ",
-						"",
-					},
+					EventAt:     time.Date(2019, 3, 4, 15, 51, 00, 0, time.UTC),
+					Description: "Germany\nDE-63179\nReceive item from sender/ Κατάθεση αντικειμένου από τον αποστολέα\n \n\n",
 				},
 			},
 			wantErr: false,
