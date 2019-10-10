@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/fr05t1k/pechkin/parser"
 	"github.com/fr05t1k/pechkin/storage"
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -31,7 +32,7 @@ func MakeListHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 		}
 		var trackIds []string
 		for _, track := range tracks {
-			trackIds = append(trackIds, track.Id)
+			trackIds = append(trackIds, track.Number)
 		}
 		_, _ = b.Send(m.Sender, fmt.Sprintf("Here is your tracking numbers:\n%s", strings.Join(trackIds, "\n")))
 	}
@@ -39,7 +40,7 @@ func MakeListHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 
 func MakeHistoryHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 	return func(m *tb.Message) {
-		events, err := store.GetEvents(m.Sender.ID, m.Payload)
+		events, err := store.GetEvents(m.Payload)
 		if err != nil {
 			_, _ = b.Send(m.Sender, "No history for this tracking number")
 		}
@@ -58,7 +59,7 @@ func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) 
 				log.Println(err)
 			}
 
-			existedEvents, err := store.GetEvents(sender.ID, track)
+			existedEvents, err := store.GetEvents(track)
 
 			if err != nil && err != storage.NoEventsError {
 				log.Println(err)
@@ -84,9 +85,9 @@ func ToMessage(track string, events []storage.Event) string {
 	for _, event := range events {
 		builder.WriteString("______________________\n")
 		builder.WriteString("At ")
-		builder.WriteString(event.When.String())
+		builder.WriteString(event.EventAt.String())
 		builder.WriteString("\n")
-		builder.WriteString(strings.Join(event.Description, "\n"))
+		builder.WriteString(event.Description)
 	}
 
 	return builder.String()

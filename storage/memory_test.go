@@ -63,13 +63,13 @@ func Test_memory_GetTracks(t *testing.T) {
 		{
 			name: "exists",
 			fields: fields{
-				tracks:  map[int][]Track{1: {{Id: "abc"}}},
+				tracks:  map[int][]Track{1: {{Number: "abc"}}},
 				history: nil,
 			},
 			args: args{
 				userId: 1,
 			},
-			wantTracks: []Track{{Id: "abc"}},
+			wantTracks: []Track{{Number: "abc"}},
 		},
 	}
 	for _, tt := range tests {
@@ -107,8 +107,8 @@ func Test_memory_SetHistory(t *testing.T) {
 				trackId: "abc",
 				events: []Event{
 					{
-						When:        time.Now(),
-						Description: []string{"test"},
+						EventAt:     time.Now(),
+						Description: "test",
 					},
 				},
 			},

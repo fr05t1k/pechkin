@@ -5,6 +5,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/fr05t1k/pechkin/storage"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -27,6 +28,7 @@ func (c *cyprusPost) Parse(track string) (events []storage.Event, err error) {
 
 	doc.Find("table.table-striped.table-bordered tr").Each(func(i int, tr *goquery.Selection) {
 		event := storage.Event{}
+		descBuilder := strings.Builder{}
 		tds := tr.Find("td")
 		if tds.Size() < 6 || (!tr.HasClass("tabl1") && !tr.HasClass("tabl1")) {
 			return
@@ -35,11 +37,13 @@ func (c *cyprusPost) Parse(track string) (events []storage.Event, err error) {
 			switch i {
 			case 0:
 				// "3/14/2019 3:51:00 PM"
-				event.When, err = time.Parse("1/2/2006 3:04:05 PM", selection.Text())
+				event.EventAt, err = time.Parse("1/2/2006 3:04:05 PM", selection.Text())
 			default:
-				event.Description = append(event.Description, selection.Text())
+				descBuilder.WriteString(selection.Text())
+				descBuilder.WriteString("\n")
 			}
 		})
+		event.Description = descBuilder.String()
 		events = append(events, event)
 	})
 
