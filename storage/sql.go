@@ -11,19 +11,19 @@ type sqlStorage struct {
 
 func (s *sqlStorage) GetTracks(userId int) []Track {
 	var tracks []Track
-	s.db.Where("user_id = ?", userId).Find(&tracks)
-	if s.db.Error != nil {
+	err := s.db.Where("user_id = ?", userId).Find(&tracks).Error
+	if err != nil {
 		log.Println(s.db.Error)
 	}
 
 	return tracks
 }
 
-func (s *sqlStorage) GetEvents(trackId string) ([]Event, error) {
-	var events []Event
-	s.db.Where("track_id = ?", trackId).Find(&events)
-	if s.db.Error != nil {
-		log.Println(s.db.Error)
+func (s *sqlStorage) GetEvents(trackId string) (events []Event, err error) {
+	err = s.db.Where("track_id = ?", trackId).Find(&events).Error
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
 	return events, nil
@@ -41,11 +41,12 @@ func (s *sqlStorage) AddTrack(userId int, number string) error {
 
 func (s *sqlStorage) getTrack(userId int, number string) *Track {
 	track := Track{}
-	notFound := s.db.Where("user_id = ? and number = ?", userId, number).Find(&track).RecordNotFound()
-	if s.db.Error != nil {
-		log.Println(s.db.Error)
+	err := s.db.Where("user_id = ? and number = ?", userId, number).Find(&track).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil
 	}
-	if notFound == true {
+	if err != nil {
+		log.Println(s.db.Error)
 		return nil
 	}
 
@@ -56,9 +57,9 @@ func (s *sqlStorage) SetHistory(trackId string, events []Event) error {
 	s.db.Where("track_id = ?", trackId).Delete(&Event{})
 	for _, event := range events {
 		event.TrackId = trackId
-		s.db.Create(&event)
-		if s.db.Error != nil {
-			log.Println(s.db.Error)
+		err := s.db.Create(&event).Error
+		if err != nil {
+			return err
 		}
 	}
 
@@ -67,14 +68,14 @@ func (s *sqlStorage) SetHistory(trackId string, events []Event) error {
 
 func (s *sqlStorage) GetAllTracks() []Track {
 	var tracks []Track
-	s.db.Find(&tracks)
-	if s.db.Error != nil {
-		log.Println(s.db.Error)
+	err := s.db.Find(&tracks).Error
+	if err != nil {
+		log.Println(err)
 	}
 
 	return tracks
 }
 
-func NewSql(db *gorm.DB) Storage {
+func NewSql(db *gorm.DB) *sqlStorage {
 	return &sqlStorage{db: db}
 }
