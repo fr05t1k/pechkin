@@ -20,7 +20,7 @@ func main() {
 		Updates: 0,
 		Poller:  &tb.LongPoller{Timeout: 10 * time.Second},
 		Reporter: func(e error) {
-			log.Println(e)
+			log.Error(e)
 		},
 	})
 
