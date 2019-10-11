@@ -5,8 +5,8 @@ import (
 
 	"github.com/fr05t1k/pechkin/parser"
 	"github.com/fr05t1k/pechkin/storage"
+	log "github.com/sirupsen/logrus"
 	tb "gopkg.in/tucnak/telebot.v2"
-	"log"
 	"strings"
 	"time"
 )
@@ -56,13 +56,13 @@ func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) 
 			<-time.After(10 * time.Second)
 			events, err := p.Parse(track)
 			if err != nil {
-				log.Println(err)
+				log.Error(err)
 			}
 
 			existedEvents, err := store.GetEvents(track)
 
 			if err != nil && err != storage.NoEventsError {
-				log.Println(err)
+				log.Error(err)
 			} else {
 				if len(events) != len(existedEvents) {
 					_, _ = b.Send(sender, ToMessage(track, events))
@@ -71,9 +71,11 @@ func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) 
 
 			err = store.SetHistory(track, events)
 			if err != nil {
-				log.Println(err)
+				log.Error(err)
 			}
-			log.Println(track, "updated")
+			log.WithFields(log.Fields{
+				"track": track,
+			}).Info("updated")
 
 		}
 	}()

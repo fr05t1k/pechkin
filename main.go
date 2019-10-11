@@ -4,13 +4,17 @@ import (
 	"github.com/fr05t1k/pechkin/storage"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
 	tb "gopkg.in/tucnak/telebot.v2"
-	"log"
 	"os"
 	"time"
 )
 
 func main() {
+
+	log.SetLevel(log.InfoLevel)
+	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
+
 	b, err := tb.NewBot(tb.Settings{
 		Token:   os.Getenv("PECHKIN_BOT_TOKEN"),
 		Updates: 0,

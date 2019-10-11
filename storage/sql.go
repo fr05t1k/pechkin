@@ -2,7 +2,7 @@ package storage
 
 import (
 	"github.com/jinzhu/gorm"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 type sqlStorage struct {
@@ -13,7 +13,7 @@ func (s *sqlStorage) GetTracks(userId int) []Track {
 	var tracks []Track
 	err := s.db.Where("user_id = ?", userId).Find(&tracks).Error
 	if err != nil {
-		log.Println(s.db.Error)
+		log.Error(s.db.Error)
 	}
 
 	return tracks
@@ -22,7 +22,7 @@ func (s *sqlStorage) GetTracks(userId int) []Track {
 func (s *sqlStorage) GetEvents(trackId string) (events []Event, err error) {
 	err = s.db.Where("track_id = ?", trackId).Find(&events).Error
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return
 	}
 
@@ -46,7 +46,7 @@ func (s *sqlStorage) getTrack(userId int, number string) *Track {
 		return nil
 	}
 	if err != nil {
-		log.Println(s.db.Error)
+		log.Error(s.db.Error)
 		return nil
 	}
 
@@ -70,7 +70,7 @@ func (s *sqlStorage) GetAllTracks() []Track {
 	var tracks []Track
 	err := s.db.Find(&tracks).Error
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	return tracks
