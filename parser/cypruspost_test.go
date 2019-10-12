@@ -2,6 +2,7 @@ package parser
 
 import (
 	"github.com/fr05t1k/pechkin/storage"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -69,7 +70,7 @@ func Test_cyprusPost_Parse(t *testing.T) {
 			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte(tt.response))
 			}))
-			c := NewCyprusPost()
+			c := NewCyprusPost(logrus.New())
 			c.PageUrl = s.URL + "?track=%s"
 			gotEvents, err := c.Parse(tt.track)
 			if (err != nil) != tt.wantErr {
