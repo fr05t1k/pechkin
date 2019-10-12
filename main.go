@@ -1,13 +1,14 @@
 package main
 
 import (
+	"log"
+	"os"
+	"time"
+
 	"github.com/fr05t1k/pechkin/storage"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 	tb "gopkg.in/tucnak/telebot.v2"
-	"log"
-	"os"
-	"time"
 )
 
 func main() {
@@ -34,7 +35,9 @@ func main() {
 	}
 	b.Handle("/add", MakeAddHandler(b, store))
 	b.Handle("/list", MakeListHandler(b, store))
+	b.Handle("/help", MakeListHandler(b, store))
 	b.Handle("/history", MakeHistoryHandler(b, store))
+	b.Handle("/start", MakeHistoryHandler(b, store))
 	b.Start()
 }
 
