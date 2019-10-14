@@ -44,6 +44,8 @@ func main() {
 	b.Handle("/add", handler.AddHandler)
 	b.Handle("/list", handler.ListHandler)
 	b.Handle("/history", handler.HistoryHandler)
+	b.Handle("/start", handler.StartHandler)
+	b.Handle("/help", handler.HelpHandler)
 	b.Start()
 }
 
