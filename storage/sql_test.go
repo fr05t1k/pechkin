@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/fr05t1k/pechkin/log"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/stretchr/testify/assert"
@@ -88,7 +89,7 @@ func Test_sqlStorage_SetHistory(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewSql(tt.db)
+			s := NewSql(tt.db, log.NewNopLogger())
 			if err := s.SetHistory(tt.args.trackId, tt.args.events); (err != nil) != tt.wantErr {
 				t.Errorf("SetHistory() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -119,7 +120,7 @@ func Test_sqlStorage_SetHistory(t *testing.T) {
 }
 
 func Test_sqlStorage_GetAllTracks(t *testing.T) {
-	s := NewSql(createDb(t))
+	s := NewSql(createDb(t), log.NewNopLogger())
 
 	err := s.AddTrack(1, "ABC")
 	assert.NoError(t, err)
@@ -139,7 +140,7 @@ func Test_sqlStorage_GetAllTracks(t *testing.T) {
 	assert.Equal(t, 1, tracks[1].UserId)
 	assert.Equal(t, "EFG", tracks[1].Number)
 
-	s = NewSql(createBrokenDb(t))
+	s = NewSql(createBrokenDb(t), log.NewNopLogger())
 
 	tracks = s.GetAllTracks()
 
@@ -194,7 +195,7 @@ func Test_sqlStorage_GetTracks(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewSql(tt.db)
+			s := NewSql(tt.db, log.NewNopLogger())
 			assert.NoError(t, s.AddTrack(1, "ABC"))
 			assert.NoError(t, s.AddTrack(2, "EFG"))
 			assert.NoError(t, s.AddTrack(2, "XYZ"))
@@ -216,7 +217,7 @@ func Test_sqlStorage_GetTracks(t *testing.T) {
 
 func Test_sqlStorage_getTrack(t *testing.T) {
 	db := createDb(t)
-	s := NewSql(db)
+	s := NewSql(db, log.NewNopLogger())
 	assert.NoError(t, s.AddTrack(1, "ABC"))
 	assert.NoError(t, s.AddTrack(2, "EFG"))
 	assert.NoError(t, s.AddTrack(2, "XYZ"))
@@ -277,7 +278,7 @@ func Test_sqlStorage_getTrack(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewSql(tt.db)
+			s := NewSql(tt.db, log.NewNopLogger())
 
 			track := s.getTrack(tt.args.userId, tt.args.number)
 			if track == nil {
@@ -292,7 +293,7 @@ func Test_sqlStorage_getTrack(t *testing.T) {
 
 func Test_sqlStorage_GetEvents(t *testing.T) {
 	db := createDb(t)
-	s := NewSql(db)
+	s := NewSql(db, log.NewNopLogger())
 	err := s.SetHistory(
 		"ABC",
 		[]Event{
@@ -347,7 +348,7 @@ func Test_sqlStorage_GetEvents(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewSql(tt.fields.db)
+			s := NewSql(tt.fields.db, log.NewNopLogger())
 			got, err := s.GetEvents(tt.args.trackId)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetEvents() error = %v, wantErr %v", err, tt.wantErr)
