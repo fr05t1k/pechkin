@@ -8,6 +8,7 @@ type Track struct {
 	ID        int    `gorm:"primary_key"`
 	UserId    int    `gorm:"unique_index:idx_user_id_number"`
 	Number    string `gorm:"index:idx_number;unique_index:idx_user_id_number"`
+	Name      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -23,7 +24,7 @@ type Event struct {
 type Storage interface {
 	GetTracks(userId int) []Track
 	GetEvents(trackId string) ([]Event, error)
-	AddTrack(userId int, trackId string) error
+	AddTrack(userId int, trackId string, name string) error
 	SetHistory(trackId string, events []Event) error
 	GetAllTracks() []Track
 }
