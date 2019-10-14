@@ -10,6 +10,15 @@ import (
 	"time"
 )
 
+const startMessage = `Hello! I can help you with tracking your packages.`
+
+const availableCommands = `
+Here is a list of available commands:
+/add <tracking number> <name> - add tracking number
+/list - show all your tracking numbers
+/history <tracking number> - show all events for given tracking number
+`
+
 type Handler struct {
 	logger logrus.FieldLogger
 	store  storage.Storage
@@ -22,6 +31,14 @@ func NewHandler(log logrus.FieldLogger, store storage.Storage, bot *tb.Bot) *Han
 		store:  store,
 		bot:    bot,
 	}
+}
+
+func (h *Handler) StartHandler(m *tb.Message) {
+	_, _ = h.bot.Send(m.Sender, fmt.Sprintf("%s\n%s", startMessage, availableCommands))
+}
+
+func (h *Handler) HelpHandler(m *tb.Message) {
+	_, _ = h.bot.Send(m.Sender, availableCommands)
 }
 
 func (h *Handler) AddHandler(m *tb.Message) {
