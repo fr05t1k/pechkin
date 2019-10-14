@@ -2,16 +2,26 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/fr05t1k/pechkin/parser"
 	"github.com/fr05t1k/pechkin/storage"
 	tb "gopkg.in/tucnak/telebot.v2"
-	"log"
 	"strings"
 	"time"
 )
 
-func MakeAddHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
+type logger interface {
+	Printf(string, ...interface{})
+}
+
+type Handler struct {
+	logger logger
+}
+
+func NewHandler(log logger) *Handler {
+	return &Handler{logger: log}
+}
+
+func (h *Handler) MakeAddHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 	return func(m *tb.Message) {
 		err := store.AddTrack(m.Sender.ID, m.Payload)
 		if err != nil {
@@ -20,10 +30,11 @@ func MakeAddHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 		}
 
 		_, _ = b.Send(m.Sender, fmt.Sprintf("%s Added", m.Payload))
-		RunUpdate(b, m.Payload, m.Sender, store)
+		h.RunUpdate(b, m.Payload, m.Sender, store)
 	}
 }
-func MakeListHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
+
+func (h *Handler) MakeListHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 	return func(m *tb.Message) {
 		tracks := store.GetTracks(m.Sender.ID)
 		if len(tracks) == 0 {
@@ -38,7 +49,7 @@ func MakeListHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 	}
 }
 
-func MakeHistoryHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
+func (h *Handler) MakeHistoryHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 	return func(m *tb.Message) {
 		events, err := store.GetEvents(m.Payload)
 		if err != nil {
@@ -49,20 +60,20 @@ func MakeHistoryHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
 
 }
 
-func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) {
-	p := parser.NewCyprusPost()
+func (h *Handler) RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) {
+	p := parser.NewCyprusPost(h.logger)
 	go func() {
 		for {
 			<-time.After(10 * time.Second)
 			events, err := p.Parse(track)
 			if err != nil {
-				log.Println(err)
+				h.logger.Printf("error parsing %s: %s", track, err)
 			}
 
 			existedEvents, err := store.GetEvents(track)
 
 			if err != nil && err != storage.NoEventsError {
-				log.Println(err)
+				h.logger.Printf("error getting events for %s: %s", track, err)
 			} else {
 				if len(events) != len(existedEvents) {
 					_, _ = b.Send(sender, ToMessage(track, events))
@@ -71,10 +82,10 @@ func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) 
 
 			err = store.SetHistory(track, events)
 			if err != nil {
-				log.Println(err)
+				h.logger.Printf("error settings history for %s: %s", track, err)
 			}
-			log.Println(track, "updated")
 
+			h.logger.Printf("updated %s", track)
 		}
 	}()
 }

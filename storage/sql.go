@@ -2,18 +2,22 @@ package storage
 
 import (
 	"github.com/jinzhu/gorm"
-	"log"
 )
 
+type logger interface {
+	Printf(string, ...interface{})
+}
+
 type sqlStorage struct {
-	db *gorm.DB
+	logger logger
+	db     *gorm.DB
 }
 
 func (s *sqlStorage) GetTracks(userId int) []Track {
 	var tracks []Track
 	err := s.db.Where("user_id = ?", userId).Find(&tracks).Error
 	if err != nil {
-		log.Println(s.db.Error)
+		s.logger.Printf("error getting tracks for user %d: %s", userId, s.db.Error)
 	}
 
 	return tracks
@@ -22,7 +26,7 @@ func (s *sqlStorage) GetTracks(userId int) []Track {
 func (s *sqlStorage) GetEvents(trackId string) (events []Event, err error) {
 	err = s.db.Where("track_id = ?", trackId).Find(&events).Error
 	if err != nil {
-		log.Println(err)
+		s.logger.Printf("error getting events for track %s: %s", trackId, err)
 		return
 	}
 
@@ -46,7 +50,7 @@ func (s *sqlStorage) getTrack(userId int, number string) *Track {
 		return nil
 	}
 	if err != nil {
-		log.Println(s.db.Error)
+		s.logger.Printf("error getting track %d for user %s: %s", number, userId, s.db.Error)
 		return nil
 	}
 
@@ -70,12 +74,15 @@ func (s *sqlStorage) GetAllTracks() []Track {
 	var tracks []Track
 	err := s.db.Find(&tracks).Error
 	if err != nil {
-		log.Println(err)
+		s.logger.Printf("error getting all tracks: %s", err)
 	}
 
 	return tracks
 }
 
-func NewSql(db *gorm.DB) *sqlStorage {
-	return &sqlStorage{db: db}
+func NewSql(db *gorm.DB, log logger) *sqlStorage {
+	return &sqlStorage{
+		db:     db,
+		logger: log,
+	}
 }
