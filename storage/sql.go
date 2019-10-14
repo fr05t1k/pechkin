@@ -30,10 +30,11 @@ func (s *sqlStorage) GetEvents(trackId string) (events []Event, err error) {
 	return events, nil
 }
 
-func (s *sqlStorage) AddTrack(userId int, number string) error {
+func (s *sqlStorage) AddTrack(userId int, number string, name string) error {
 	track := Track{
 		UserId: userId,
 		Number: number,
+		Name:   name,
 	}
 	s.db.Create(&track)
 

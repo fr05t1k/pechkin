@@ -31,8 +31,8 @@ func main() {
 		return
 	}
 
-	handler := NewHandler(logger)
 	store := createStore(logger)
+	handler := NewHandler(logger, store, b)
 
 	for _, track := range store.GetAllTracks() {
 		user := tb.User{
@@ -41,22 +41,18 @@ func main() {
 		handler.RunUpdate(b, track.Number, &user, store)
 	}
 
-	b.Handle("/add", handler.MakeAddHandler(b, store))
-	b.Handle("/list", handler.MakeListHandler(b, store))
-	b.Handle("/history", handler.MakeHistoryHandler(b, store))
+	b.Handle("/add", handler.AddHandler)
+	b.Handle("/list", handler.ListHandler)
+	b.Handle("/history", handler.HistoryHandler)
 	b.Start()
 }
 
 func createStore(logger logrus.FieldLogger) storage.Storage {
-	if os.Getenv("DATABASE_URL") != "" {
-		db, err := gorm.Open("postgres", os.Getenv("DATABASE_URL"))
-		if err != nil {
-			logger.WithField("err", err).Error("cannot to connect to the storage")
-		}
-		db.AutoMigrate(&storage.Track{}, &storage.Event{})
-
-		return storage.NewSql(db, logger)
+	db, err := gorm.Open("postgres", os.Getenv("DATABASE_URL"))
+	if err != nil {
+		logger.WithField("err", err).Error("cannot to connect to the storage")
 	}
+	db.AutoMigrate(&storage.Track{}, &storage.Event{})
 
-	return storage.NewMemory()
+	return storage.NewSql(db, logger)
 }

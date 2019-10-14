@@ -12,49 +12,53 @@ import (
 
 type Handler struct {
 	logger logrus.FieldLogger
+	store  storage.Storage
+	bot    *tb.Bot
 }
 
-func NewHandler(log logrus.FieldLogger) *Handler {
-	return &Handler{logger: log}
-}
-
-func (h *Handler) MakeAddHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
-	return func(m *tb.Message) {
-		err := store.AddTrack(m.Sender.ID, m.Payload)
-		if err != nil {
-			_, _ = b.Send(m.Sender, "Cannot add this tracking number")
-			return
-		}
-
-		_, _ = b.Send(m.Sender, fmt.Sprintf("%s Added", m.Payload))
-		h.RunUpdate(b, m.Payload, m.Sender, store)
+func NewHandler(log logrus.FieldLogger, store storage.Storage, bot *tb.Bot) *Handler {
+	return &Handler{
+		logger: log,
+		store:  store,
+		bot:    bot,
 	}
 }
 
-func (h *Handler) MakeListHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
-	return func(m *tb.Message) {
-		tracks := store.GetTracks(m.Sender.ID)
-		if len(tracks) == 0 {
-			_, _ = b.Send(m.Sender, "You dont have tracking numbers")
-			return
-		}
-		var trackIds []string
-		for _, track := range tracks {
-			trackIds = append(trackIds, track.Number)
-		}
-		_, _ = b.Send(m.Sender, fmt.Sprintf("Here is your tracking numbers:\n%s", strings.Join(trackIds, "\n")))
+func (h *Handler) AddHandler(m *tb.Message) {
+	params := strings.Split(m.Payload, " ")
+	if len(params) != 2 {
+		_, _ = h.bot.Send(m.Sender, "Please provide track number and name. Example: /add RB12312412CY Watch")
+		return
 	}
+	err := h.store.AddTrack(m.Sender.ID, params[0], params[1])
+	if err != nil {
+		_, _ = h.bot.Send(m.Sender, "Cannot add this tracking number")
+		return
+	}
+
+	_, _ = h.bot.Send(m.Sender, fmt.Sprintf("%s Added", m.Payload))
+	h.RunUpdate(h.bot, m.Payload, m.Sender, h.store)
 }
 
-func (h *Handler) MakeHistoryHandler(b *tb.Bot, store storage.Storage) func(m *tb.Message) {
-	return func(m *tb.Message) {
-		events, err := store.GetEvents(m.Payload)
-		if err != nil {
-			_, _ = b.Send(m.Sender, "No history for this tracking number")
-		}
-		_, _ = b.Send(m.Sender, ToMessage(m.Payload, events))
+func (h *Handler) ListHandler(m *tb.Message) {
+	tracks := h.store.GetTracks(m.Sender.ID)
+	if len(tracks) == 0 {
+		_, _ = h.bot.Send(m.Sender, "You dont have tracking numbers")
+		return
 	}
+	var trackIds []string
+	for _, track := range tracks {
+		trackIds = append(trackIds, track.Number+" "+track.Name)
+	}
+	_, _ = h.bot.Send(m.Sender, fmt.Sprintf("Here is your tracking numbers:\n%s", strings.Join(trackIds, "\n")))
+}
 
+func (h *Handler) HistoryHandler(m *tb.Message) {
+	events, err := h.store.GetEvents(m.Payload)
+	if err != nil {
+		_, _ = h.bot.Send(m.Sender, "No history for this tracking number")
+	}
+	_, _ = h.bot.Send(m.Sender, ToMessage(m.Payload, events))
 }
 
 func (h *Handler) RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) {
@@ -69,7 +73,7 @@ func (h *Handler) RunUpdate(b *tb.Bot, track string, sender *tb.User, store stor
 
 			existedEvents, err := store.GetEvents(track)
 
-			if err != nil && err != storage.NoEventsError {
+			if err != nil {
 				h.logger.WithFields(logrus.Fields{"track": track, "err": err}).Error("cannot get events")
 			} else {
 				if len(events) != len(existedEvents) {

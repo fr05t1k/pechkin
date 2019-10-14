@@ -122,10 +122,10 @@ func Test_sqlStorage_SetHistory(t *testing.T) {
 func Test_sqlStorage_GetAllTracks(t *testing.T) {
 	s := NewSql(createDb(t), log.NewNopLogger())
 
-	err := s.AddTrack(1, "ABC")
+	err := s.AddTrack(1, "ABC", "name a")
 	assert.NoError(t, err)
 
-	err = s.AddTrack(1, "EFG")
+	err = s.AddTrack(1, "EFG", "name b")
 	assert.NoError(t, err)
 
 	tracks := s.GetAllTracks()
@@ -137,8 +137,10 @@ func Test_sqlStorage_GetAllTracks(t *testing.T) {
 	// check necessary fields
 	assert.Equal(t, 1, tracks[0].UserId)
 	assert.Equal(t, "ABC", tracks[0].Number)
+	assert.Equal(t, "name a", tracks[0].Name)
 	assert.Equal(t, 1, tracks[1].UserId)
 	assert.Equal(t, "EFG", tracks[1].Number)
+	assert.Equal(t, "name b", tracks[1].Name)
 
 	s = NewSql(createBrokenDb(t), log.NewNopLogger())
 
@@ -196,9 +198,9 @@ func Test_sqlStorage_GetTracks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewSql(tt.db, log.NewNopLogger())
-			assert.NoError(t, s.AddTrack(1, "ABC"))
-			assert.NoError(t, s.AddTrack(2, "EFG"))
-			assert.NoError(t, s.AddTrack(2, "XYZ"))
+			assert.NoError(t, s.AddTrack(1, "ABC", ""))
+			assert.NoError(t, s.AddTrack(2, "EFG", ""))
+			assert.NoError(t, s.AddTrack(2, "XYZ", ""))
 
 			tracks := s.GetTracks(tt.userId)
 			// check length
@@ -218,9 +220,9 @@ func Test_sqlStorage_GetTracks(t *testing.T) {
 func Test_sqlStorage_getTrack(t *testing.T) {
 	db := createDb(t)
 	s := NewSql(db, log.NewNopLogger())
-	assert.NoError(t, s.AddTrack(1, "ABC"))
-	assert.NoError(t, s.AddTrack(2, "EFG"))
-	assert.NoError(t, s.AddTrack(2, "XYZ"))
+	assert.NoError(t, s.AddTrack(1, "ABC", ""))
+	assert.NoError(t, s.AddTrack(2, "EFG", ""))
+	assert.NoError(t, s.AddTrack(2, "XYZ", ""))
 
 	brokenDb := createBrokenDb(t)
 	type args struct {
