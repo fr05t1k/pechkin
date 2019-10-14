@@ -11,12 +11,7 @@ import (
 
 const defaultPageUrl = "https://ips.cypruspost.gov.cy/ipswebtrack/IPSWeb_item_events.aspx?itemid=%s&Submit=Submit"
 
-type logger interface {
-	Printf(string, ...interface{})
-}
-
 type cyprusPost struct {
-	logger
 	PageUrl string
 	Client  *http.Client
 }
@@ -55,9 +50,8 @@ func (c *cyprusPost) Parse(track string) (events []storage.Event, err error) {
 	return
 }
 
-func NewCyprusPost(log logger) *cyprusPost {
+func NewCyprusPost() *cyprusPost {
 	c := cyprusPost{
-		logger:  log,
 		PageUrl: defaultPageUrl,
 		Client:  http.DefaultClient,
 	}

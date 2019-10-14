@@ -4,20 +4,17 @@ import (
 	"fmt"
 	"github.com/fr05t1k/pechkin/parser"
 	"github.com/fr05t1k/pechkin/storage"
+	"github.com/sirupsen/logrus"
 	tb "gopkg.in/tucnak/telebot.v2"
 	"strings"
 	"time"
 )
 
-type logger interface {
-	Printf(string, ...interface{})
-}
-
 type Handler struct {
-	logger logger
+	logger logrus.FieldLogger
 }
 
-func NewHandler(log logger) *Handler {
+func NewHandler(log logrus.FieldLogger) *Handler {
 	return &Handler{logger: log}
 }
 
@@ -61,19 +58,19 @@ func (h *Handler) MakeHistoryHandler(b *tb.Bot, store storage.Storage) func(m *t
 }
 
 func (h *Handler) RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) {
-	p := parser.NewCyprusPost(h.logger)
+	p := parser.NewCyprusPost()
 	go func() {
 		for {
 			<-time.After(10 * time.Second)
 			events, err := p.Parse(track)
 			if err != nil {
-				h.logger.Printf("error parsing %s: %s", track, err)
+				h.logger.WithFields(logrus.Fields{"track": track, "err": err}).Error("error parsing")
 			}
 
 			existedEvents, err := store.GetEvents(track)
 
 			if err != nil && err != storage.NoEventsError {
-				h.logger.Printf("error getting events for %s: %s", track, err)
+				h.logger.WithFields(logrus.Fields{"track": track, "err": err}).Error("cannot get events")
 			} else {
 				if len(events) != len(existedEvents) {
 					_, _ = b.Send(sender, ToMessage(track, events))
@@ -82,10 +79,10 @@ func (h *Handler) RunUpdate(b *tb.Bot, track string, sender *tb.User, store stor
 
 			err = store.SetHistory(track, events)
 			if err != nil {
-				h.logger.Printf("error settings history for %s: %s", track, err)
+				h.logger.WithFields(logrus.Fields{"track": track, "err": err}).Error("error settings history")
 			}
 
-			h.logger.Printf("updated %s", track)
+			h.logger.WithFields(logrus.Fields{"trackId": track}).Info("track updated")
 		}
 	}()
 }

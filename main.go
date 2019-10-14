@@ -47,11 +47,11 @@ func main() {
 	b.Start()
 }
 
-func createStore(logger logger) storage.Storage {
+func createStore(logger logrus.FieldLogger) storage.Storage {
 	if os.Getenv("DATABASE_URL") != "" {
 		db, err := gorm.Open("postgres", os.Getenv("DATABASE_URL"))
 		if err != nil {
-			logger.Printf("error connecting to storage: %s", err)
+			logger.WithField("err", err).Error("cannot to connect to the storage")
 		}
 		db.AutoMigrate(&storage.Track{}, &storage.Event{})
 
