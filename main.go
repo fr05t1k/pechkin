@@ -34,14 +34,10 @@ func main() {
 	store := createStore(logger)
 	handler := NewHandler(logger, store, b)
 
-	for _, track := range store.GetAllTracks() {
-		user := tb.User{
-			ID: track.ID,
-		}
-		handler.RunUpdate(b, track.Number, &user, store)
-	}
+	runUpdates(b, store, logger, 10*time.Second)
 
 	b.Handle("/add", handler.AddHandler)
+	b.Handle("/remove", handler.RemoveHandler)
 	b.Handle("/list", handler.ListHandler)
 	b.Handle("/history", handler.HistoryHandler)
 	b.Handle("/start", handler.StartHandler)

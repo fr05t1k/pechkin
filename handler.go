@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/fr05t1k/pechkin/parser"
 	"github.com/fr05t1k/pechkin/storage"
@@ -15,9 +16,16 @@ const startMessage = `Hello! I can help you with tracking your packages.`
 const availableCommands = `
 Here is a list of available commands:
 /add <tracking number> <name> - add tracking number
+/remove <tracking number> - remove tracking number
 /list - show all your tracking numbers
 /history <tracking number> - show all events for given tracking number
 `
+
+const cannotDeleteTrack = "I cannot delete your tracking number right now. Please try again later."
+const cannotFindTrack = "I cannot find you tracking number. Did you add it? Check /list first."
+const trackHasBedDeleted = "Your tracking number has been deleted. Thanks for cleaning :)"
+const noTracks = "You dont have tracking numbers"
+const noHistory = "No history for this tracking number"
 
 type Handler struct {
 	logger logrus.FieldLogger
@@ -54,13 +62,40 @@ func (h *Handler) AddHandler(m *tb.Message) {
 	}
 
 	_, _ = h.bot.Send(m.Sender, fmt.Sprintf("%s Added", m.Payload))
-	h.RunUpdate(h.bot, m.Payload, m.Sender, h.store)
+}
+
+func (h *Handler) RemoveHandler(m *tb.Message) {
+	payload := m.Payload
+	if payload == "" {
+		_, _ = h.bot.Send(m.Sender, "Please specify you track number. Example /remove RB12345678CY.")
+		return
+	}
+	track, err := h.store.GetTrack(payload)
+	if err == storage.NotFound {
+		_, _ = h.bot.Send(m.Sender, cannotFindTrack)
+		return
+	}
+	if err != nil {
+		_, _ = h.bot.Send(m.Sender, cannotDeleteTrack)
+		return
+	}
+	if track.UserId != m.Sender.ID {
+		_, _ = h.bot.Send(m.Sender, cannotFindTrack)
+		return
+	}
+	err = h.store.Remove(payload)
+	if err != nil {
+		_, _ = h.bot.Send(m.Sender, cannotDeleteTrack)
+		return
+	}
+
+	_, _ = h.bot.Send(m.Sender, trackHasBedDeleted)
 }
 
 func (h *Handler) ListHandler(m *tb.Message) {
 	tracks := h.store.GetTracks(m.Sender.ID)
 	if len(tracks) == 0 {
-		_, _ = h.bot.Send(m.Sender, "You dont have tracking numbers")
+		_, _ = h.bot.Send(m.Sender, noTracks)
 		return
 	}
 	var trackIds []string
@@ -73,37 +108,48 @@ func (h *Handler) ListHandler(m *tb.Message) {
 func (h *Handler) HistoryHandler(m *tb.Message) {
 	events, err := h.store.GetEvents(m.Payload)
 	if err != nil {
-		_, _ = h.bot.Send(m.Sender, "No history for this tracking number")
+		_, _ = h.bot.Send(m.Sender, noHistory)
 	}
 	_, _ = h.bot.Send(m.Sender, ToMessage(m.Payload, events))
 }
 
-func (h *Handler) RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) {
+func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) error {
 	p := parser.NewCyprusPost()
+	events, err := p.Parse(track)
+	if err != nil {
+		return errors.New("error parsing")
+	}
+
+	existedEvents, err := store.GetEvents(track)
+
+	if err != nil {
+		return errors.New("cannot get events")
+	} else {
+		if len(events) != len(existedEvents) {
+			_, _ = b.Send(sender, ToMessage(track, events))
+		}
+	}
+
+	err = store.SetHistory(track, events)
+	if err != nil {
+		return errors.New("error settings history")
+	}
+
+	return nil
+}
+
+func runUpdates(b *tb.Bot, store storage.Storage, logger logrus.FieldLogger, each time.Duration) {
 	go func() {
 		for {
-			<-time.After(10 * time.Second)
-			events, err := p.Parse(track)
-			if err != nil {
-				h.logger.WithFields(logrus.Fields{"track": track, "err": err}).Error("error parsing")
-			}
-
-			existedEvents, err := store.GetEvents(track)
-
-			if err != nil {
-				h.logger.WithFields(logrus.Fields{"track": track, "err": err}).Error("cannot get events")
-			} else {
-				if len(events) != len(existedEvents) {
-					_, _ = b.Send(sender, ToMessage(track, events))
+			<-time.After(each)
+			for _, track := range store.GetAllTracks() {
+				if err := RunUpdate(b, track.Number, &tb.User{ID: track.UserId}, store); err != nil {
+					logger.WithFields(logrus.Fields{"trackId": track.Number, "err": err}).Info("cannot update track")
+				} else {
+					logger.WithFields(logrus.Fields{"trackId": track.Number}).Info("track updated")
 				}
-			}
 
-			err = store.SetHistory(track, events)
-			if err != nil {
-				h.logger.WithFields(logrus.Fields{"track": track, "err": err}).Error("error settings history")
 			}
-
-			h.logger.WithFields(logrus.Fields{"trackId": track}).Info("track updated")
 		}
 	}()
 }

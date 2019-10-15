@@ -367,3 +367,46 @@ func Test_sqlStorage_GetEvents(t *testing.T) {
 		})
 	}
 }
+
+func Test_sqlStorage_Remove(t *testing.T) {
+	s := NewSql(createDb(t), log.NewNopLogger())
+
+	assert.NoError(t, s.AddTrack(1, "123", "test"))
+	assert.NoError(t, s.AddTrack(2, "456", "test"))
+
+	assert.Len(t, s.GetAllTracks(), 2)
+
+	assert.NoError(t, s.Remove("123"))
+	tracks := s.GetAllTracks()
+	assert.Len(t, tracks, 1)
+	assert.Equal(t, "456", tracks[0].Number)
+
+	assert.NoError(t, s.Remove("456"))
+	assert.Len(t, s.GetAllTracks(), 0)
+
+	s = NewSql(createBrokenDb(t), log.NewNopLogger())
+
+	assert.Error(t, s.Remove("456"))
+}
+
+func Test_sqlStorage_GetTrack(t *testing.T) {
+	s := NewSql(createDb(t), log.NewNopLogger())
+
+	assert.NoError(t, s.AddTrack(1, "ABC", "test"))
+	assert.NoError(t, s.AddTrack(1, "EFG", "test"))
+
+	// Try to get first record
+	track, err := s.GetTrack("ABC")
+	assert.NoError(t, err, "cannot get tracking number")
+	assert.Equal(t, "ABC", track.Number, "wrong tracking number")
+
+	// Try to get not existed record
+	_, err = s.GetTrack("HJK")
+	assert.Equal(t, NotFound, err)
+
+	s = NewSql(createBrokenDb(t), log.NewNopLogger())
+
+	_, err = s.GetTrack("HJK")
+	assert.Error(t, err, "broken db should return an error")
+	assert.NotEqual(t, NotFound, err, "error should not be Not Found if we have problem with database")
+}

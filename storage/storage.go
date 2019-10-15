@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"time"
 )
 
@@ -21,10 +22,14 @@ type Event struct {
 	CreatedAt   time.Time
 }
 
+var NotFound = errors.New("track not found")
+
 type Storage interface {
 	GetTracks(userId int) []Track
-	GetEvents(trackId string) ([]Event, error)
-	AddTrack(userId int, trackId string, name string) error
-	SetHistory(trackId string, events []Event) error
+	GetEvents(number string) ([]Event, error)
+	AddTrack(userId int, number string, name string) error
+	SetHistory(number string, events []Event) error
 	GetAllTracks() []Track
+	Remove(number string) error
+	GetTrack(number string) (Track, error)
 }

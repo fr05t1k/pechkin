@@ -10,6 +10,18 @@ type sqlStorage struct {
 	db     *gorm.DB
 }
 
+func (s *sqlStorage) GetTrack(number string) (track Track, err error) {
+	err = s.db.Where("number = ?", number).Find(&track).Error
+	if err == gorm.ErrRecordNotFound {
+		err = NotFound
+	}
+	return
+}
+
+func (s *sqlStorage) Remove(trackId string) error {
+	return s.db.Delete(Track{}, "number = ?", trackId).Error
+}
+
 func (s *sqlStorage) GetTracks(userId int) []Track {
 	var tracks []Track
 	err := s.db.Where("user_id = ?", userId).Find(&tracks).Error
