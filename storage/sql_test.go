@@ -392,7 +392,7 @@ func Test_sqlStorage_Remove(t *testing.T) {
 func Test_sqlStorage_GetTrack(t *testing.T) {
 	s := NewSql(createDb(t), log.NewNopLogger())
 
-	assert.NoError(t, s.AddTrack(1, "ABC", "test"))
+	assert.NoError(t, s.AddTrack(1, "ABCD", "test"))
 	assert.NoError(t, s.AddTrack(1, "EFG", "test"))
 
 	// Try to get first record
