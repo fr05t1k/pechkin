@@ -27,10 +27,14 @@ func (c *cyprusPost) Parse(track string) (events []storage.Event, err error) {
 	}
 
 	doc.Find("table.table-striped.table-bordered tr").Each(func(i int, tr *goquery.Selection) {
+		// skip first two rows
+		if i < 2 {
+			return
+		}
 		event := storage.Event{}
 		descBuilder := strings.Builder{}
 		tds := tr.Find("td")
-		if tds.Size() < 6 || (!tr.HasClass("tabl1") && !tr.HasClass("tabl1")) {
+		if tds.Size() < 6 {
 			return
 		}
 		tds.Each(func(i int, selection *goquery.Selection) {
