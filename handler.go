@@ -22,6 +22,8 @@ Here is a list of available commands:
 `
 
 const cannotDeleteTrack = "I cannot delete your tracking number right now. Please try again later."
+const cannotAddTrack = "I cannot add your tracking number right now. Please try again later."
+const limitExceeded = "Your limit is exceeded. Please remove one tracking number or contact @spavlovichev to increase the limit."
 const cannotFindTrack = "I cannot find you tracking number. Did you add it? Check /list first."
 const trackHasBedDeleted = "Your tracking number has been deleted. Thanks for cleaning :)"
 const noTracks = "You dont have tracking numbers"
@@ -55,9 +57,18 @@ func (h *Handler) AddHandler(m *tb.Message) {
 		_, _ = h.bot.Send(m.Sender, "Please provide track number and name. Example: /add RB12312412CY Watch")
 		return
 	}
-	err := h.store.AddTrack(m.Sender.ID, params[0], params[1])
+	isExceeded, err := h.store.IsLimitExceeded(m.Sender.ID)
 	if err != nil {
-		_, _ = h.bot.Send(m.Sender, "Cannot add this tracking number")
+		_, _ = h.bot.Send(m.Sender, cannotAddTrack)
+		return
+	}
+	if isExceeded {
+		_, _ = h.bot.Send(m.Sender, limitExceeded)
+		return
+	}
+	err = h.store.AddTrack(m.Sender.ID, params[0], params[1])
+	if err != nil {
+		_, _ = h.bot.Send(m.Sender, cannotAddTrack)
 		return
 	}
 
@@ -121,19 +132,20 @@ func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) 
 	}
 
 	existedEvents, err := store.GetEvents(track)
-
 	if err != nil {
 		return errors.New("cannot get events")
-	} else {
-		if len(events) != len(existedEvents) {
-			_, _ = b.Send(sender, ToMessage(track, events))
-		}
+	}
+
+	logrus.Printf("%d %d %s", len(events), len(existedEvents), track)
+	if len(events) == len(existedEvents) {
+		return nil
 	}
 
 	err = store.SetHistory(track, events)
 	if err != nil {
 		return errors.New("error settings history")
 	}
+	_, _ = b.Send(sender, ToMessage(track, events))
 
 	return nil
 }

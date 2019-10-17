@@ -50,7 +50,11 @@ func createStore(logger logrus.FieldLogger) storage.Storage {
 	if err != nil {
 		logger.WithField("err", err).Error("cannot to connect to the storage")
 	}
-	db.AutoMigrate(&storage.Track{}, &storage.Event{})
+	db.AutoMigrate(
+		&storage.Track{},
+		&storage.Event{},
+		&storage.User{},
+	)
 
 	return storage.NewSql(db, logger)
 }

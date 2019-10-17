@@ -5,6 +5,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const defaultLimit = 5
+
 type sqlStorage struct {
 	logger logrus.FieldLogger
 	db     *gorm.DB
@@ -16,6 +18,29 @@ func (s *sqlStorage) GetTrack(number string) (track Track, err error) {
 		err = NotFound
 	}
 	return
+}
+
+func (s *sqlStorage) countTracks(userId int) (count int, err error) {
+	err = s.db.Model(Track{}).Where("user_id = ?", userId).Count(&count).Error
+	return
+}
+
+func (s *sqlStorage) IsLimitExceeded(userId int) (bool, error) {
+	count, err := s.countTracks(userId)
+	if err != nil {
+		return false, err
+	}
+
+	user := User{}
+	err = s.db.First(&user, userId).Error
+	if err == gorm.ErrRecordNotFound {
+		return count >= defaultLimit, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return count >= user.TrackLimit, nil
 }
 
 func (s *sqlStorage) Remove(trackId string) error {
