@@ -22,6 +22,11 @@ type Event struct {
 	CreatedAt   time.Time
 }
 
+type User struct {
+	ID         int `gorm:"primary_key"`
+	TrackLimit int
+}
+
 var NotFound = errors.New("track not found")
 
 type Storage interface {
@@ -32,4 +37,5 @@ type Storage interface {
 	GetAllTracks() []Track
 	Remove(number string) error
 	GetTrack(number string) (Track, error)
+	IsLimitExceeded(userId int) (bool, error)
 }

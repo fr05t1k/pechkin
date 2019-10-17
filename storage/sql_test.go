@@ -15,7 +15,7 @@ func createDb(t *testing.T) (db *gorm.DB) {
 		return
 	}
 	db.LogMode(false)
-	db.AutoMigrate(&Track{}, &Event{})
+	db.AutoMigrate(&Track{}, &Event{}, &User{})
 
 	return db
 }
@@ -409,4 +409,130 @@ func Test_sqlStorage_GetTrack(t *testing.T) {
 	_, err = s.GetTrack("HJK")
 	assert.Error(t, err, "broken db should return an error")
 	assert.NotEqual(t, NotFound, err, "error should not be Not Found if we have problem with database")
+}
+
+func Test_sqlStorage_countTracks(t *testing.T) {
+	store := NewSql(createDb(t), log.NewNopLogger())
+
+	assert.NoError(t, store.AddTrack(1, "ABC", "test 1"))
+	assert.NoError(t, store.AddTrack(1, "EFG", "test 2"))
+	assert.NoError(t, store.AddTrack(1, "XYZ", "test 3"))
+	assert.NoError(t, store.AddTrack(2, "ABC2", "test2 1"))
+
+	brokenStore := NewSql(createBrokenDb(t), log.NewNopLogger())
+
+	tests := []struct {
+		name      string
+		store     *sqlStorage
+		userId    int
+		wantCount int
+		wantErr   bool
+	}{
+		{
+			name:      "expected 3",
+			store:     store,
+			userId:    1,
+			wantCount: 3,
+			wantErr:   false,
+		},
+		{
+			name:      "expected 1",
+			store:     store,
+			userId:    2,
+			wantCount: 1,
+			wantErr:   false,
+		},
+		{
+			name:      "expected 0",
+			store:     store,
+			userId:    3,
+			wantCount: 0,
+			wantErr:   false,
+		},
+		{
+			name:      "broken db",
+			store:     brokenStore,
+			userId:    1,
+			wantCount: 0,
+			wantErr:   true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotCount, err := tt.store.countTracks(tt.userId)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("countTracks() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotCount != tt.wantCount {
+				t.Errorf("countTracks() gotCount = %v, want %v", gotCount, tt.wantCount)
+			}
+		})
+	}
+}
+
+func Test_sqlStorage_IsLimitExceeded(t *testing.T) {
+	db := createDb(t)
+	store := NewSql(db, log.NewNopLogger())
+
+	customLimit := 2
+	userWithCustomLimit := User{
+		ID:         4,
+		TrackLimit: customLimit,
+	}
+	db.Create(&userWithCustomLimit)
+
+	assert.NoError(t, store.AddTrack(1, "A", "test"))
+	assert.NoError(t, store.AddTrack(1, "B", "test"))
+	assert.NoError(t, store.AddTrack(1, "C", "test"))
+	assert.NoError(t, store.AddTrack(1, "E", "test"))
+	assert.NoError(t, store.AddTrack(1, "F", "test"))
+
+	assert.NoError(t, store.AddTrack(2, "A", "test"))
+
+	assert.NoError(t, store.AddTrack(4, "A", "test"))
+	assert.NoError(t, store.AddTrack(4, "B", "test"))
+
+	tests := []struct {
+		name    string
+		store   *sqlStorage
+		userId  int
+		want    bool
+		wantErr bool
+	}{
+		{
+			name:    "ok",
+			store:   store,
+			userId:  2,
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name:    "exceeded",
+			store:   store,
+			userId:  1,
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name:    "custom",
+			store:   store,
+			userId:  4,
+			want:    true,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			got, err := tt.store.IsLimitExceeded(tt.userId)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("IsLimitExceeded() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("IsLimitExceeded() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
