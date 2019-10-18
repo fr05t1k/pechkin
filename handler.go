@@ -25,7 +25,7 @@ const cannotDeleteTrack = "I cannot delete your tracking number right now. Pleas
 const cannotAddTrack = "I cannot add your tracking number right now. Please try again later."
 const limitExceeded = "Your limit is exceeded. Please remove one tracking number or contact @spavlovichev to increase the limit."
 const cannotFindTrack = "I cannot find you tracking number. Did you add it? Check /list first."
-const trackHasBedDeleted = "Your tracking number has been deleted. Thanks for cleaning :)"
+const trackHasBeenDeleted = "Your tracking number has been deleted. Thanks for cleaning :)"
 const noTracks = "You dont have tracking numbers"
 const noHistory = "No history for this tracking number"
 
@@ -100,7 +100,7 @@ func (h *Handler) RemoveHandler(m *tb.Message) {
 		return
 	}
 
-	_, _ = h.bot.Send(m.Sender, trackHasBedDeleted)
+	_, _ = h.bot.Send(m.Sender, trackHasBeenDeleted)
 }
 
 func (h *Handler) ListHandler(m *tb.Message) {
