@@ -81,7 +81,7 @@ func (h *Handler) RemoveHandler(m *tb.Message) {
 		_, _ = h.bot.Send(m.Sender, "Please specify you track number. Example /remove RB12345678CY.")
 		return
 	}
-	track, err := h.store.GetTrack(payload)
+	track, err := h.store.GetTrackForUser(payload, m.Sender.ID)
 	if err == storage.NotFound {
 		_, _ = h.bot.Send(m.Sender, cannotFindTrack)
 		return
@@ -121,10 +121,10 @@ func (h *Handler) HistoryHandler(m *tb.Message) {
 	if err != nil {
 		_, _ = h.bot.Send(m.Sender, noHistory)
 	}
-	_, _ = h.bot.Send(m.Sender, ToMessage(m.Payload, events))
+	_, _ = h.bot.Send(m.Sender, MakeHistoryMessage(m.Payload, events))
 }
 
-func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) error {
+func RunUpdate(b *tb.Bot, track string, store storage.Storage) error {
 	p := parser.NewCyprusPost()
 	events, err := p.Parse(track)
 	if err != nil {
@@ -145,7 +145,15 @@ func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) 
 	if err != nil {
 		return errors.New("error settings history")
 	}
-	_, _ = b.Send(sender, ToMessage(track, events[len(existedEvents):]))
+
+	tracks, err := store.GetTrackByNumber(track)
+	if err != nil {
+		return err
+	}
+
+	for i := range tracks {
+		_, _ = b.Send(&tb.User{ID: tracks[i].UserId}, MakeNewUpdateMessage(tracks[i], events[len(existedEvents):]))
+	}
 
 	return nil
 }
@@ -155,7 +163,7 @@ func runUpdates(b *tb.Bot, store storage.Storage, logger logrus.FieldLogger, eac
 		for {
 			<-time.After(each)
 			for _, track := range store.GetAllTracks() {
-				if err := RunUpdate(b, track.Number, &tb.User{ID: track.UserId}, store); err != nil {
+				if err := RunUpdate(b, track.Number, store); err != nil {
 					logger.WithFields(logrus.Fields{"trackId": track.Number, "err": err}).Info("cannot update track")
 				} else {
 					logger.WithFields(logrus.Fields{"trackId": track.Number}).Info("track updated")
@@ -166,9 +174,24 @@ func runUpdates(b *tb.Bot, store storage.Storage, logger logrus.FieldLogger, eac
 	}()
 }
 
-func ToMessage(track string, events []storage.Event) string {
+func MakeNewUpdateMessage(track storage.Track, events []storage.Event) string {
+	builder := strings.Builder{}
+	builder.WriteString(fmt.Sprintf("You have new updates for %s (%s) 🎉\n", track.Name, track.Number))
+	builder.WriteString(MakeEventsMessage(events))
+
+	return builder.String()
+}
+
+func MakeHistoryMessage(track string, events []storage.Event) string {
 	builder := strings.Builder{}
 	builder.WriteString(fmt.Sprintf("Here is your history for tracking number %s\n", track))
+	builder.WriteString(MakeEventsMessage(events))
+
+	return builder.String()
+}
+
+func MakeEventsMessage(events []storage.Event) string {
+	builder := strings.Builder{}
 	for _, event := range events {
 		builder.WriteString("\n")
 		builder.WriteString("⏱️ ")

@@ -36,6 +36,7 @@ type Storage interface {
 	SetHistory(number string, events []Event) error
 	GetAllTracks() []Track
 	Remove(number string) error
-	GetTrack(number string) (Track, error)
+	GetTrackForUser(number string, userId int) (Track, error)
+	GetTrackByNumber(number string) (users []Track, err error)
 	IsLimitExceeded(userId int) (bool, error)
 }

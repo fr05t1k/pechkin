@@ -389,24 +389,24 @@ func Test_sqlStorage_Remove(t *testing.T) {
 	assert.Error(t, s.Remove("456"))
 }
 
-func Test_sqlStorage_GetTrack(t *testing.T) {
+func Test_sqlStorage_GetTrackForUser(t *testing.T) {
 	s := NewSql(createDb(t), log.NewNopLogger())
 
 	assert.NoError(t, s.AddTrack(1, "ABC", "test"))
 	assert.NoError(t, s.AddTrack(1, "EFG", "test"))
 
 	// Try to get first record
-	track, err := s.GetTrack("ABC")
+	track, err := s.GetTrackForUser("ABC", 1)
 	assert.NoError(t, err, "cannot get tracking number")
 	assert.Equal(t, "ABC", track.Number, "wrong tracking number")
 
 	// Try to get not existed record
-	_, err = s.GetTrack("HJK")
+	_, err = s.GetTrackForUser("HJK", 1)
 	assert.Equal(t, NotFound, err)
 
 	s = NewSql(createBrokenDb(t), log.NewNopLogger())
 
-	_, err = s.GetTrack("HJK")
+	_, err = s.GetTrackForUser("HJK", 1)
 	assert.Error(t, err, "broken db should return an error")
 	assert.NotEqual(t, NotFound, err, "error should not be Not Found if we have problem with database")
 }

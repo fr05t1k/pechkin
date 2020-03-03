@@ -12,8 +12,8 @@ type sqlStorage struct {
 	db     *gorm.DB
 }
 
-func (s *sqlStorage) GetTrack(number string) (track Track, err error) {
-	err = s.db.Where("number = ?", number).Find(&track).Error
+func (s *sqlStorage) GetTrackForUser(number string, userId int) (track Track, err error) {
+	err = s.db.Where("number = ? and user_id = ?", number, userId).Find(&track).Error
 	if err == gorm.ErrRecordNotFound {
 		err = NotFound
 	}
@@ -76,6 +76,16 @@ func (s *sqlStorage) AddTrack(userId int, number string, name string) error {
 	s.db.Create(&track)
 
 	return s.db.Error
+}
+
+func (s *sqlStorage) GetTrackByNumber(number string) (tracks []Track, err error) {
+	err = s.db.Where("number = ?", number).Find(&tracks).Error
+	if err != nil {
+		s.logger.WithFields(logrus.Fields{"trackId": number, "err": err}).Error("error getting events for track")
+		return
+	}
+
+	return tracks, nil
 }
 
 func (s *sqlStorage) getTrack(userId int, number string) *Track {
