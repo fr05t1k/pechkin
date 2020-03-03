@@ -108,9 +108,9 @@ func (h *Handler) ListHandler(m *tb.Message) {
 	}
 	var trackIds []string
 	for _, track := range tracks {
-		trackIds = append(trackIds, track.Number+" "+track.Name)
+		trackIds = append(trackIds, "*"+track.Number+"* "+track.Name)
 	}
-	_, _ = h.bot.Send(m.Sender, fmt.Sprintf("Here is your tracking numbers:\n%s", strings.Join(trackIds, "\n")))
+	_, _ = h.bot.Send(m.Sender, fmt.Sprintf("Here is your tracking numbers:\n%s", strings.Join(trackIds, "\n")), tb.ModeMarkdown)
 }
 
 func (h *Handler) HistoryHandler(m *tb.Message) {
@@ -118,7 +118,7 @@ func (h *Handler) HistoryHandler(m *tb.Message) {
 	if err != nil {
 		_, _ = h.bot.Send(m.Sender, noHistory)
 	}
-	_, _ = h.bot.Send(m.Sender, MakeHistoryMessage(m.Payload, events))
+	_, _ = h.bot.Send(m.Sender, MakeHistoryMessage(m.Payload, events), tb.ModeMarkdown)
 }
 
 func RunUpdate(b *tb.Bot, track string, store storage.Storage) error {
@@ -149,7 +149,11 @@ func RunUpdate(b *tb.Bot, track string, store storage.Storage) error {
 	}
 
 	for i := range tracks {
-		_, _ = b.Send(&tb.User{ID: tracks[i].UserId}, MakeNewUpdateMessage(tracks[i], events[len(existedEvents):]))
+		_, _ = b.Send(
+			&tb.User{ID: tracks[i].UserId},
+			MakeNewUpdateMessage(tracks[i], events[len(existedEvents):]),
+			tb.ModeMarkdown,
+		)
 	}
 
 	return nil
@@ -173,7 +177,7 @@ func runUpdates(b *tb.Bot, store storage.Storage, logger logrus.FieldLogger, eac
 
 func MakeNewUpdateMessage(track storage.Track, events []storage.Event) string {
 	builder := strings.Builder{}
-	builder.WriteString(fmt.Sprintf("You have new updates for %s (%s) 🎉\n", track.Name, track.Number))
+	builder.WriteString(fmt.Sprintf("You have new updates for *%s* (%s) 🎉\n", track.Name, track.Number))
 	builder.WriteString(MakeEventsMessage(events))
 
 	return builder.String()
@@ -181,7 +185,7 @@ func MakeNewUpdateMessage(track storage.Track, events []storage.Event) string {
 
 func MakeHistoryMessage(track string, events []storage.Event) string {
 	builder := strings.Builder{}
-	builder.WriteString(fmt.Sprintf("Here is your history for tracking number %s\n", track))
+	builder.WriteString(fmt.Sprintf("Here is your history for tracking number *%s*\n", track))
 	builder.WriteString(MakeEventsMessage(events))
 
 	return builder.String()
