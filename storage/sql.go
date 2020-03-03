@@ -43,8 +43,8 @@ func (s *sqlStorage) IsLimitExceeded(userId int) (bool, error) {
 	return count >= user.TrackLimit, nil
 }
 
-func (s *sqlStorage) Remove(trackId string) error {
-	return s.db.Delete(Track{}, "number = ?", trackId).Error
+func (s *sqlStorage) Remove(track Track) error {
+	return s.db.Delete(track).Error
 }
 
 func (s *sqlStorage) GetTracks(userId int) []Track {

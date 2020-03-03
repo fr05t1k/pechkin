@@ -90,11 +90,8 @@ func (h *Handler) RemoveHandler(m *tb.Message) {
 		_, _ = h.bot.Send(m.Sender, cannotDeleteTrack)
 		return
 	}
-	if track.UserId != m.Sender.ID {
-		_, _ = h.bot.Send(m.Sender, cannotFindTrack)
-		return
-	}
-	err = h.store.Remove(payload)
+
+	err = h.store.Remove(track)
 	if err != nil {
 		_, _ = h.bot.Send(m.Sender, cannotDeleteTrack)
 		return

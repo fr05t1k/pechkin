@@ -374,19 +374,21 @@ func Test_sqlStorage_Remove(t *testing.T) {
 	assert.NoError(t, s.AddTrack(1, "123", "test"))
 	assert.NoError(t, s.AddTrack(2, "456", "test"))
 
-	assert.Len(t, s.GetAllTracks(), 2)
-
-	assert.NoError(t, s.Remove("123"))
 	tracks := s.GetAllTracks()
+	assert.Len(t, tracks, 2)
+
+	assert.NoError(t, s.Remove(tracks[0]))
+
+	tracks = s.GetAllTracks()
 	assert.Len(t, tracks, 1)
 	assert.Equal(t, "456", tracks[0].Number)
 
-	assert.NoError(t, s.Remove("456"))
+	assert.NoError(t, s.Remove(tracks[0]))
 	assert.Len(t, s.GetAllTracks(), 0)
 
 	s = NewSql(createBrokenDb(t), log.NewNopLogger())
 
-	assert.Error(t, s.Remove("456"))
+	assert.Error(t, s.Remove(Track{Number: "123"}))
 }
 
 func Test_sqlStorage_GetTrackForUser(t *testing.T) {
