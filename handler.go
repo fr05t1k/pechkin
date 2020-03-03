@@ -137,7 +137,7 @@ func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) 
 	}
 
 	logrus.Printf("%d %d %s", len(events), len(existedEvents), track)
-	if len(events) == len(existedEvents) {
+	if len(events) <= len(existedEvents) {
 		return nil
 	}
 
@@ -145,7 +145,7 @@ func RunUpdate(b *tb.Bot, track string, sender *tb.User, store storage.Storage) 
 	if err != nil {
 		return errors.New("error settings history")
 	}
-	_, _ = b.Send(sender, ToMessage(track, events))
+	_, _ = b.Send(sender, ToMessage(track, events[len(existedEvents):]))
 
 	return nil
 }
@@ -170,8 +170,8 @@ func ToMessage(track string, events []storage.Event) string {
 	builder := strings.Builder{}
 	builder.WriteString(fmt.Sprintf("Here is your history for tracking number %s\n", track))
 	for _, event := range events {
-		builder.WriteString("______________________\n")
-		builder.WriteString("At ")
+		builder.WriteString("\n")
+		builder.WriteString("⏱️ ")
 		builder.WriteString(event.EventAt.String())
 		builder.WriteString("\n")
 		builder.WriteString(event.Description)
